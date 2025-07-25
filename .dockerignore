@@ -1,0 +1,52 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# Ignore virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore documentation and markdown files
+*.md
+!README.md
+
+# Ignore upload directory (likely contains generated data)
+upload/
+
+# Ignore connector jar files (already in connectors directory)
+connectors/
+
+# Ignore Jupyter notebooks (development files)
+*.ipynb
+
+# Ignore Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Ignore test files
+test_*.py
+diagnose_*.py
+browse_*.py
+interactive.*

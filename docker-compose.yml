@@ -1,0 +1,152 @@
+version: '3.8'
+
+services:
+
+  mirror-postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mirror-postgres
+    depends_on:
+      - kafka
+      # - postgres  <- if you are running PostgreSQL in the same Docker compose setup
+      - kafka-connect
+    environment:
+      # Kafka connection - Use internal Docker network
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      
+      # PostgreSQL connection - Use internal Docker network
+      # POSTGRES_HOST: postgres <- if you are running PostgreSQL in the same Docker network
+      POSTGRES_HOST: host.docker.internal # <- Fill with your PostgreSQL host
+      POSTGRES_PORT: 5432 # <- Fill with your PostgreSQL host port
+      POSTGRES_DB: testdb # <- Fill with your PostgreSQL database name
+      POSTGRES_USER: postgres # <- Fill with your PostgreSQL user
+      POSTGRES_PASSWORD: postgres # <- Fill with your PostgreSQL password
+      
+      # Tables to mirror (comma-separated) - from .env file
+      POSTGRES_TABLES: public.users,public.orders,public.products # <- Fill with your PostgreSQL tables to mirror
+
+      # Azure credentials - from .env file
+      MIRRORING_ID: a29------------69 # <- Fill with your Fabric Mirrored Database ID
+      WORKSPACE_ID: dc----------ed7 # <- Fill with your Fabric Workspace ID where the mirrored database is located
+      CLIENT_SECRET: 3i----------------------BbO- # <- Fill with your Service Principal Client Secret
+      CLIENT_ID: 51-----------------b0 # <- Fill with your Service Principal Client ID
+      TENANT_ID: 349------------------85 # <- Fill with your Service Principal Tenant ID
+
+      # Debezium Configuration
+      DEBEZIUM_CONNECTOR_NAME: postgres-connector
+      DEBEZIUM_SLOT_NAME: debezium_slot
+      DEBEZIUM_PUBLICATION_NAME: debezium_publication
+
+      # Schema Registry
+      SCHEMA_REGISTRY_URL: http://schema-registry:8081
+    restart: unless-stopped
+
+
+  # Zookeeper
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+
+  # Kafka
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_DOCKER://kafka:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_DOCKER://0.0.0.0:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_DOCKER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_DOCKER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+
+  # Schema Registry
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.4.0
+    container_name: schema-registry
+    depends_on:
+      - kafka
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+    ports:
+      - "8081:8081"
+
+  # Kafka Connect with Debezium
+  kafka-connect:
+    image: debezium/connect:2.4
+    container_name: kafka-connect
+    depends_on:
+      - kafka
+      - schema-registry
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: connect_configs
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_TOPIC: connect_offsets
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_TOPIC: connect_statuses
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      INTERNAL_KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      INTERNAL_VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+    ports:
+      - "8083:8083"
+
+  # # Kafka UI (optional)
+  # kafka-ui:
+  #   image: provectuslabs/kafka-ui:latest
+  #   container_name: kafka-ui
+  #   depends_on:
+  #     - kafka
+  #     - schema-registry
+  #   environment:
+  #     KAFKA_CLUSTERS_0_NAME: local
+  #     KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+  #     KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+  #   ports:
+  #     - "8080:8080"
+
+  # # PostgreSQL with CDC enabled
+  # postgres:
+  #   image: postgres:15
+  #   container_name: postgres
+  #   environment:
+  #     POSTGRES_DB: testdb
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #   command:
+  #     - postgres
+  #     - -c
+  #     - wal_level=logical
+  #     - -c
+  #     - max_wal_senders=1
+  #     - -c
+  #     - max_replication_slots=1
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  # Mirror Postgres Service
+  
+
+volumes:
+  postgres_data:
