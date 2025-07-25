@@ -1,6 +1,6 @@
-# PostgreSQL to Microsoft Fabric Mirror
+# Open Mirroring: PostgreSQL to Microsoft Fabric
 
-A real-time data mirroring solution that streams PostgreSQL database changes to Microsoft Fabric using Kafka and Debezium CDC (Change Data Capture). This tool enables seamless synchronization of PostgreSQL tables with Microsoft Fabric's Mirrored Databases.
+A real-time data mirroring solution that streams PostgreSQL database changes to Microsoft Fabric using Microsoft Fabric´s Open Mirroring capability, Kafka and Debezium. This tool enables seamless synchronization of PostgreSQL tables with Microsoft Fabric's Mirrored Databases.
 
 ## 🚀 Features
 
