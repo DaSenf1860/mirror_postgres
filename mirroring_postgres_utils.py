@@ -49,8 +49,8 @@ def get_postgres_schema(table_name="users", schema_name="public"):
     
     try:
         # Connect to PostgreSQL
-        print(f"Connecting to PostgreSQL at {conn_params['host']}:{conn_params['port']}")
-        print(f"Database: {conn_params['database']}")
+        # print(f"Connecting to PostgreSQL at {conn_params['host']}:{conn_params['port']}")
+        # print(f"Database: {conn_params['database']}")
         
         conn = psycopg2.connect(**conn_params)
         cursor = conn.cursor()
@@ -93,12 +93,12 @@ def get_postgres_schema(table_name="users", schema_name="public"):
             nullable = "YES" if col['is_nullable'] == 'YES' else "NO"
             default = str(col['column_default']) if col['column_default'] else "NULL"
             
-            print(f"{column_name:<20} {data_type:<25} {nullable:<10} {default:<15}")
+            # print(f"{column_name:<20} {data_type:<25} {nullable:<10} {default:<15}")
         
         cursor.close()
         conn.close()
         
-        print(f"\nTotal columns: {len(schema_info)}")
+        # print(f"\nTotal columns: {len(schema_info)}")
         return schema_info
         
     except psycopg2.Error as e:
@@ -245,13 +245,13 @@ def clean_dataframe_for_pyarrow(df, schema):
     
     return df_cleaned
 
-def get_parquet(postgres_db, table_name, client_id=None, group_id=None, timeout_ms=1000):
+def get_parquet(postgres_db, table_name, client_id=None, group_id=None, max_messages=10000, timeout_ms=5000):
     topic_name = f"{postgres_db}.{table_name}"
     schema_name = table_name.split(".")[0] if "." in table_name else "public"
     if "." in table_name:
         table_name = table_name.split(".")[1]
     schema = create_pyarrow_schema_from_postgres(table_name, schema_name)
-    messages = list_messages(topic_name, client_id=client_id, group_id=group_id)
+    messages = list_messages(topic_name, client_id=client_id, group_id=group_id, max_messages=max_messages, timeout_ms=timeout_ms)
 
     messages_transformed = [transform_message(mes) for mes in messages if "after" in mes]
     df_concat = pd.DataFrame(messages_transformed)

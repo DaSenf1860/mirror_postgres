@@ -8,7 +8,7 @@ This script lists all messages from a specified Kafka topic.
 from kafka import KafkaConsumer
 import json
 import os
-
+from time import time
 
 def list_messages(topic_name, max_messages=None, timeout_ms=5000, client_id='kafka_topic_lister', group_id='kafka_topic_lister_group'):
     """
@@ -19,6 +19,10 @@ def list_messages(topic_name, max_messages=None, timeout_ms=5000, client_id='kaf
         max_messages (int): Maximum number of messages to read (None for all)
     timeout_ms (int): Consumer timeout in milliseconds
     """
+
+    timestamp = int(time()*1000)  # Get current timestamp in milliseconds
+    timeout_ts = timestamp + timeout_ms
+
     def value_deserializer(value):
         if value is None:
             return None
@@ -73,6 +77,10 @@ def list_messages(topic_name, max_messages=None, timeout_ms=5000, client_id='kaf
         #     print(f"     {line}")
         
         # Stop if we've reached the maximum number of messages
+        if timeout_ts < int(time() * 1000):
+            print(f"⏹️  Stopped after {timeout_ms} ms (timeout reached)")
+            break
+
         if max_messages and message_count >= max_messages:
             print(f"\n⏹️  Stopped after {max_messages} messages (limit reached)")
 

@@ -25,8 +25,10 @@ services:
       POSTGRES_PASSWORD: postgres # <- Fill with your PostgreSQL password
       
       # Tables to mirror (comma-separated) - from .env file
-      POSTGRES_TABLES: public.users,public.orders,public.products # <- Fill with your PostgreSQL tables to mirror
-
+      POSTGRES_TABLES: public.users,public.orders,public.products
+      MAX_MESSAGES: 10000  # Maximum messages to process in one go
+      TIMEOUT: 5000  # Timeout for processing messages in milliseconds
+      
       # Azure credentials - from .env file
       MIRRORING_ID: a29------------69 # <- Fill with your Fabric Mirrored Database ID
       WORKSPACE_ID: dc----------ed7 # <- Fill with your Fabric Workspace ID where the mirrored database is located
